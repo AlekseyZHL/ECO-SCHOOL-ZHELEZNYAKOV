@@ -1,0 +1,2029 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ЭнергоКалькулятор 25 — энергопаспорт школы</title>
+<meta name="description" content="Интерактивный расчёт энергосберегающих мероприятий школы № 25 г. Гомеля имени Б. А. Царикова. Проект Дмитрия Железнякова, 9 «А» класс.">
+<style>
+/* ============================================================
+   ДИЗАЙН-ТОКЕНЫ (primitive → semantic → component)
+   Палитра: ui-ux-pro-max design system, образовательный продукт
+   ============================================================ */
+:root{
+  --indigo-50:#EEF2FF; --indigo-100:#E0E7FF; --indigo-200:#C7D2FE; --indigo-300:#A5B4FC;
+  --indigo-400:#818CF8; --indigo-500:#6366F1; --indigo-600:#4F46E5; --indigo-700:#4338CA;
+  --indigo-900:#1E1B4B;
+  --orange-50:#FFF7ED; --orange-100:#FFEDD5; --orange-500:#F97316; --orange-600:#EA580C;
+  --amber-400:#F59E0B; --green-50:#ECFDF5; --green-600:#059669; --green-700:#047857;
+  --red-600:#DC2626; --slate-400:#94A3B8; --slate-500:#64748B; --slate-600:#475569;
+
+  /* semantic */
+  --color-primary:var(--indigo-600);
+  --color-primary-dark:var(--indigo-700);
+  --color-on-primary:#FFFFFF;
+  --color-accent:var(--orange-600);
+  --color-success:var(--green-600);
+  --color-danger:var(--red-600);
+  --color-bg:var(--indigo-50);
+  --color-surface:#FFFFFF;
+  --color-fg:var(--indigo-900);
+  --color-muted:var(--slate-600);
+  --color-muted-bg:#EBEEF8;
+  --color-border:var(--indigo-200);
+  --color-ring:var(--indigo-600);
+
+  /* spacing scale 8pt */
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px; --s8:64px;
+  --radius-lg:22px; --radius-md:14px; --radius-sm:10px; --radius-pill:999px;
+  --shadow-clay:inset 0 -3px 0 rgba(30,27,75,.045), inset 0 2px 0 rgba(255,255,255,.9),
+                0 1px 2px rgba(30,27,75,.06), 0 14px 30px -14px rgba(79,70,229,.32);
+  --shadow-hover:inset 0 -3px 0 rgba(30,27,75,.05), inset 0 2px 0 rgba(255,255,255,.9),
+                0 2px 4px rgba(30,27,75,.07), 0 24px 46px -18px rgba(79,70,229,.42);
+  --font:"Segoe UI","Inter","Helvetica Neue",Arial,system-ui,-apple-system,sans-serif;
+  --dur:220ms; --ease:cubic-bezier(.22,.61,.36,1);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; font-family:var(--font); color:var(--color-fg); background:var(--color-bg);
+  background-image:
+    radial-gradient(1100px 560px at 8% -12%, #E0E7FF 0%, rgba(224,231,255,0) 62%),
+    radial-gradient(900px 520px at 108% 4%, #FFEDD5 0%, rgba(255,237,213,0) 58%);
+  background-attachment:fixed;
+  font-size:16px; line-height:1.55; -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{margin:0; letter-spacing:-.02em; line-height:1.2; font-weight:800}
+p{margin:0 0 var(--s4)}
+a{color:var(--color-primary-dark); text-underline-offset:3px}
+a:hover{color:var(--color-accent)}
+:focus-visible{outline:3px solid var(--color-ring); outline-offset:3px; border-radius:6px}
+.wrap{width:100%; max-width:1160px; margin:0 auto; padding:0 var(--s5)}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.skip{position:absolute;left:-9999px;top:0;background:#fff;padding:10px 16px;z-index:100}
+.skip:focus{left:12px;top:12px}
+
+/* ------------------------------------------------ header */
+.header{position:sticky; top:0; z-index:50; background:rgba(255,255,255,.82);
+  backdrop-filter:blur(14px) saturate(150%); border-bottom:1px solid var(--color-border)}
+.header-in{display:flex; align-items:center; gap:var(--s4); min-height:64px; padding:10px 0}
+.brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:-.02em; font-size:17px; text-decoration:none; color:var(--color-fg)}
+.brand-mark{width:34px;height:34px;border-radius:11px;background:linear-gradient(150deg,var(--indigo-500),var(--indigo-700));
+  display:grid;place-items:center; box-shadow:0 6px 14px -6px rgba(79,70,229,.8); flex:0 0 auto}
+.brand-mark svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.nav{display:flex; gap:2px; margin-left:auto; flex-wrap:wrap}
+.nav a{padding:8px 12px; border-radius:var(--radius-pill); text-decoration:none; color:var(--color-muted);
+  font-size:14.5px; font-weight:600; transition:background var(--dur) var(--ease), color var(--dur) var(--ease)}
+.nav a:hover{background:var(--color-muted-bg); color:var(--color-fg)}
+.nav a[aria-current="true"]{background:var(--indigo-600); color:#fff}
+.header-meta{font-size:13px; color:var(--color-muted); white-space:nowrap}
+@media (max-width:900px){ .header-meta{display:none} .nav{width:100%; margin-left:0; overflow-x:auto; flex-wrap:nowrap} .header-in{flex-wrap:wrap; gap:6px} }
+
+/* ------------------------------------------------ generic */
+.card{background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-clay); padding:var(--s5); transition:box-shadow var(--dur) var(--ease), transform var(--dur) var(--ease)}
+.eyebrow{display:inline-flex; align-items:center; gap:8px; font-size:13px; font-weight:700; letter-spacing:.04em;
+  text-transform:uppercase; color:var(--color-primary-dark); background:var(--color-muted-bg);
+  padding:6px 14px; border-radius:var(--radius-pill)}
+.section{padding:var(--s8) 0 var(--s7)}
+.section-head{max-width:760px; margin-bottom:var(--s6)}
+.section-head h2{font-size:clamp(24px,3.2vw,34px); margin:var(--s3) 0 var(--s3)}
+.section-head p{color:var(--color-muted); font-size:16.5px; margin:0}
+.btn{appearance:none; border:0; cursor:pointer; font-family:inherit; font-weight:700; font-size:15px;
+  padding:13px 22px; border-radius:var(--radius-pill); display:inline-flex; align-items:center; gap:9px;
+  text-decoration:none; transition:transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease), background var(--dur) var(--ease);
+  min-height:46px}
+.btn-primary{background:var(--color-primary); color:#fff; box-shadow:0 8px 20px -8px rgba(79,70,229,.75)}
+.btn-primary:hover{background:var(--color-primary-dark); transform:translateY(-2px); box-shadow:0 14px 26px -10px rgba(79,70,229,.8)}
+.btn-accent{background:var(--color-accent); color:#fff; box-shadow:0 8px 20px -8px rgba(234,88,12,.7)}
+.btn-accent:hover{background:#C2410C; transform:translateY(-2px)}
+.btn-ghost{background:#fff; color:var(--color-fg); border:1.5px solid var(--color-border)}
+.btn-ghost:hover{border-color:var(--indigo-400); background:var(--indigo-50)}
+.btn-sm{padding:9px 16px; font-size:14px; min-height:40px}
+.btn:active{transform:translateY(0)}
+
+/* ------------------------------------------------ hero */
+.hero{padding:var(--s7) 0 var(--s6)}
+.hero-grid{display:grid; grid-template-columns:1.15fr .85fr; gap:var(--s6); align-items:center}
+@media (max-width:920px){ .hero-grid{grid-template-columns:1fr} }
+.hero h1{font-size:clamp(30px,4.6vw,50px); margin:var(--s4) 0 var(--s4)}
+.hero .lead{font-size:18px; color:var(--color-muted); max-width:56ch}
+.hero-actions{display:flex; gap:var(--s3); flex-wrap:wrap; margin-top:var(--s5)}
+.chips{display:flex; gap:var(--s2); flex-wrap:wrap; margin-top:var(--s5)}
+.chip{background:#fff; border:1px solid var(--color-border); border-radius:var(--radius-pill);
+  padding:7px 14px; font-size:13.5px; font-weight:600; color:var(--color-muted); display:inline-flex; gap:7px; align-items:center}
+.chip b{color:var(--color-fg)}
+.hero-card{position:relative; overflow:hidden}
+.hero-card::after{content:""; position:absolute; inset:auto -40px -70px auto; width:220px; height:220px; border-radius:50%;
+  background:radial-gradient(circle at 30% 30%, rgba(249,115,22,.22), transparent 70%)}
+.hero-figure{display:flex; flex-direction:column; gap:var(--s2)}
+.kpi-row{display:grid; grid-template-columns:repeat(2,1fr); gap:var(--s3)}
+.kpi{background:var(--color-muted-bg); border-radius:var(--radius-md); padding:var(--s4)}
+.kpi .v{font-size:clamp(22px,2.6vw,28px); font-weight:800; letter-spacing:-.03em; line-height:1.1}
+.kpi .l{font-size:12.5px; color:var(--color-muted); font-weight:600; margin-top:4px}
+.kpi.accent{background:var(--orange-50)} .kpi.accent .v{color:#B45309}
+.kpi.green{background:var(--green-50)} .kpi.green .v{color:var(--green-700)}
+
+/* ------------------------------------------------ stats / charts */
+.stats{display:grid; grid-template-columns:repeat(4,1fr); gap:var(--s4); margin-bottom:var(--s5)}
+@media (max-width:900px){ .stats{grid-template-columns:repeat(2,1fr)} }
+.stat{background:#fff; border:1px solid var(--color-border); border-radius:var(--radius-md); padding:var(--s4) var(--s5); box-shadow:var(--shadow-clay)}
+.stat .v{font-size:26px; font-weight:800; letter-spacing:-.03em}
+.stat .u{font-size:13px; color:var(--color-muted); font-weight:600}
+.grid-2{display:grid; grid-template-columns:1.05fr .95fr; gap:var(--s5)}
+@media (max-width:900px){ .grid-2{grid-template-columns:1fr} }
+.legend{display:flex; flex-direction:column; gap:10px; margin:0; padding:0; list-style:none}
+.legend li{display:flex; align-items:center; gap:10px; font-size:14.5px; color:var(--color-muted)}
+.legend .dot{width:12px; height:12px; border-radius:4px; flex:0 0 auto}
+.legend b{margin-left:auto; color:var(--color-fg); font-variant-numeric:tabular-nums; white-space:nowrap; text-align:right}
+.muted{color:var(--color-muted)}
+.small{font-size:13.5px}
+
+/* ------------------------------------------------ calculator */
+.calc{display:grid; grid-template-columns:1.25fr .75fr; gap:var(--s5); align-items:start}
+@media (max-width:980px){ .calc{grid-template-columns:1fr} }
+.measure{display:grid; grid-template-columns:auto 1fr auto; gap:var(--s3) var(--s4); align-items:center;
+  background:#fff; border:1px solid var(--color-border); border-radius:var(--radius-md); padding:var(--s4);
+  box-shadow:var(--shadow-clay); transition:border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), background var(--dur) var(--ease)}
+.measure + .measure{margin-top:var(--s3)}
+.measure.is-on{border-color:var(--indigo-400); background:linear-gradient(180deg,#fff, #F8FAFF)}
+.measure .code{font-weight:800; font-size:13px; color:var(--color-primary-dark); background:var(--color-muted-bg);
+  border-radius:8px; padding:4px 9px; letter-spacing:.02em}
+.measure .name{font-weight:700; font-size:15.5px; line-height:1.3}
+.measure .sub{font-size:13px; color:var(--color-muted); margin-top:3px}
+.measure .nums{text-align:right; font-size:13px; color:var(--color-muted); white-space:nowrap}
+.measure .nums b{display:block; font-size:15px; color:var(--color-success); font-variant-numeric:tabular-nums}
+.switch{position:relative; width:58px; height:34px; border-radius:999px; background:#CBD5E1; border:0; cursor:pointer;
+  transition:background var(--dur) var(--ease); flex:0 0 auto; padding:0}
+.switch::after{content:""; position:absolute; top:4px; left:4px; width:26px; height:26px; border-radius:50%;
+  background:#fff; box-shadow:0 2px 6px rgba(15,23,42,.3); transition:transform var(--dur) var(--ease)}
+.switch[aria-checked="true"]{background:var(--color-success)}
+.switch[aria-checked="true"]::after{transform:translateX(24px)}
+.calc-toolbar{display:flex; gap:var(--s2); margin-bottom:var(--s4); flex-wrap:wrap; align-items:center}
+.result{position:sticky; top:84px}
+@media (max-width:980px){ .result{position:static} }
+.result-hero{background:linear-gradient(160deg, var(--indigo-600), var(--indigo-700)); color:#fff; border-radius:var(--radius-lg);
+  padding:var(--s5); box-shadow:0 24px 48px -22px rgba(67,56,202,.65)}
+.result-hero .l{font-size:13px; text-transform:uppercase; letter-spacing:.06em; opacity:.85; font-weight:700}
+.result-hero .big{font-size:clamp(30px,4vw,42px); font-weight:800; letter-spacing:-.03em; line-height:1.05; margin-top:6px;
+  font-variant-numeric:tabular-nums}
+.result-hero .sub{opacity:.9; font-size:14.5px; margin-top:4px}
+.result-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:var(--s3); margin-top:var(--s4)}
+.result-grid div{background:rgba(255,255,255,.14); border-radius:var(--radius-sm); padding:10px 12px}
+.result-grid .v{font-size:19px; font-weight:800; font-variant-numeric:tabular-nums}
+.result-grid .l{font-size:12px; opacity:.9; text-transform:none; letter-spacing:0; font-weight:600}
+.verdict{margin-top:var(--s3); background:rgba(255,255,255,.16); border-radius:var(--radius-sm); padding:12px 14px; font-size:14px; line-height:1.45}
+.bars{margin-top:var(--s4)}
+.bar-row{display:grid; grid-template-columns:92px 1fr 74px; gap:10px; align-items:center; font-size:13px; color:var(--color-muted);
+  padding:5px 0}
+.bar-track{height:14px; border-radius:8px; background:var(--color-muted-bg); overflow:hidden}
+.bar-fill{height:100%; border-radius:8px; background:var(--color-primary); width:0;
+  transition:width 520ms var(--ease); }
+.bar-row .val{text-align:right; font-variant-numeric:tabular-nums; font-weight:700; color:var(--color-fg)}
+.field{display:grid; gap:6px; margin-top:var(--s4)}
+.field label{font-size:13.5px; font-weight:700; color:var(--color-muted)}
+.field input[type="number"]{font-family:inherit; font-size:15px; padding:11px 13px; border-radius:var(--radius-sm);
+  border:1.5px solid var(--color-border); background:#fff; color:var(--color-fg); width:100%; min-height:46px}
+.field input[type="range"]{width:100%; accent-color:var(--color-primary); height:28px}
+.hint{font-size:12.5px; color:var(--color-muted)}
+
+@media (max-width:560px){
+  .measure{grid-template-columns:auto 1fr}
+  .measure .code{grid-column:1; grid-row:1}
+  .measure > div:nth-child(2){grid-column:2; grid-row:1}
+  .measure > div:nth-child(3){grid-column:1 / -1; grid-row:2; display:flex; justify-content:space-between;
+    align-items:center; gap:12px; width:100%}
+  .measure .nums{text-align:left; white-space:normal}
+  .measure .nums b{display:inline; margin-right:6px}
+  .calc-toolbar{gap:8px}
+  .calc-toolbar .btn{flex:1 1 auto}
+  .hero-actions .btn{width:100%; justify-content:center}
+}
+
+/* ------------------------------------------------ solar */
+.solar{display:grid; grid-template-columns:.78fr 1.22fr; gap:var(--s5)}
+@media (max-width:980px){ .solar{grid-template-columns:1fr} }
+.seg{display:inline-flex; background:var(--color-muted-bg); border-radius:var(--radius-pill); padding:4px; gap:2px; flex-wrap:wrap}
+.seg button{border:0; background:transparent; font-family:inherit; font-weight:700; font-size:13.5px; color:var(--color-muted);
+  padding:8px 14px; border-radius:var(--radius-pill); cursor:pointer; min-height:38px; transition:background var(--dur) var(--ease), color var(--dur) var(--ease)}
+.seg button[aria-pressed="true"]{background:#fff; color:var(--color-primary-dark); box-shadow:0 2px 8px rgba(30,27,75,.12)}
+.readout{display:grid; grid-template-columns:repeat(3,1fr); gap:var(--s3); margin-top:var(--s4)}
+.readout div{background:var(--color-muted-bg); border-radius:var(--radius-sm); padding:12px 12px; min-height:76px}
+.readout .v{font-size:20px; font-weight:800; font-variant-numeric:tabular-nums; line-height:1.1}
+.readout .l{font-size:11.5px; color:var(--color-muted); font-weight:600; line-height:1.25; margin-top:2px}
+.months{display:flex; gap:6px; flex-wrap:wrap; margin-top:var(--s3)}
+.months button{border:1.5px solid var(--color-border); background:#fff; border-radius:var(--radius-sm); cursor:pointer;
+  font-family:inherit; font-size:13px; font-weight:700; color:var(--color-muted); padding:7px 10px; min-height:38px; min-width:44px;
+  transition:all var(--dur) var(--ease)}
+.months button[aria-pressed="true"]{background:var(--color-primary); border-color:var(--color-primary); color:#fff}
+
+/* ------------------------------------------------ map */
+.map-tabs{display:flex; gap:var(--s2); margin-bottom:var(--s4)}
+.plan{display:grid; grid-template-columns:1.3fr .7fr; gap:var(--s5)}
+@media (max-width:900px){ .plan{grid-template-columns:1fr} }
+.plan svg{width:100%; height:auto; display:block; overflow:visible}
+.room{cursor:pointer; transition:opacity var(--dur) var(--ease), filter var(--dur) var(--ease)}
+.room:hover{filter:brightness(1.06)}
+.room:focus-visible{outline:3px solid var(--color-ring)}
+#plan .room.is-active rect{stroke:#1E1B4B; stroke-width:3.2}
+.room-label{font-size:11.5px; font-weight:700; fill:#1E1B4B; stroke:none; pointer-events:none; font-family:var(--font)}
+.room-sub{font-size:10px; fill:#475569; stroke:none; pointer-events:none; font-family:var(--font)}
+.legend-map{display:flex; flex-wrap:wrap; gap:10px 16px; margin-top:var(--s4); font-size:13px; color:var(--color-muted)}
+.legend-map span{display:inline-flex; align-items:center; gap:7px}
+.room-card h3{font-size:17px; margin-bottom:6px}
+.room-card dl{margin:0; display:grid; grid-template-columns:auto 1fr; gap:6px 14px; font-size:14px}
+.room-card dt{color:var(--color-muted)}
+.room-card dd{margin:0; font-weight:700; text-align:right; font-variant-numeric:tabular-nums}
+
+/* ------------------------------------------------ quiz */
+.quiz{max-width:760px}
+.q-num{font-size:13px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--color-primary-dark)}
+.q-text{font-size:21px; font-weight:800; margin:var(--s3) 0 var(--s4); letter-spacing:-.02em}
+.opts{display:grid; gap:10px}
+.opt{display:flex; gap:12px; align-items:center; text-align:left; background:#fff; border:1.5px solid var(--color-border);
+  border-radius:var(--radius-md); padding:14px 16px; cursor:pointer; font-family:inherit; font-size:15.5px; font-weight:600;
+  color:var(--color-fg); min-height:52px; transition:all var(--dur) var(--ease)}
+.opt:hover{border-color:var(--indigo-400); background:var(--indigo-50)}
+.opt .k{width:28px; height:28px; border-radius:50%; background:var(--color-muted-bg); display:grid; place-items:center;
+  font-size:13px; flex:0 0 auto}
+.opt.correct{border-color:var(--green-600); background:var(--green-50)}
+.opt.correct .k{background:var(--green-600); color:#fff}
+.opt.wrong{border-color:var(--red-600); background:#FEF2F2}
+.opt.wrong .k{background:var(--red-600); color:#fff}
+.opt[disabled]{cursor:default}
+.feedback{margin-top:var(--s4); background:var(--color-muted-bg); border-radius:var(--radius-md); padding:14px 16px; font-size:14.5px}
+.progress{height:8px; background:var(--color-muted-bg); border-radius:99px; overflow:hidden; margin-bottom:var(--s4)}
+.progress i{display:block; height:100%; background:linear-gradient(90deg,var(--indigo-500),var(--green-600)); width:0; transition:width 380ms var(--ease)}
+
+/* ------------------------------------------------ report */
+.report table{width:100%; border-collapse:collapse; font-size:14.5px}
+.report th,.report td{padding:11px 12px; border-bottom:1px solid var(--color-border); text-align:left}
+.report th{font-size:12.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--color-muted)}
+.report td.n{text-align:right; font-variant-numeric:tabular-nums; font-weight:700}
+.report tfoot td{font-weight:800; border-bottom:0; border-top:2px solid var(--indigo-300)}
+.table-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch}
+
+/* ------------------------------------------------ footer */
+.footer{background:#fff; border-top:1px solid var(--color-border); padding:var(--s7) 0 var(--s6); margin-top:var(--s7)}
+.footer-grid{display:grid; grid-template-columns:1.4fr 1fr 1fr; gap:var(--s5); font-size:14px; color:var(--color-muted)}
+@media (max-width:800px){ .footer-grid{grid-template-columns:1fr} }
+.footer h4{font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--color-fg); margin-bottom:var(--s3)}
+.footer ul{list-style:none; padding:0; margin:0; display:grid; gap:8px}
+.footer a{color:var(--color-muted)}
+.footer a:hover{color:var(--color-primary-dark)}
+.credits{margin-top:var(--s5); padding-top:var(--s4); border-top:1px solid var(--color-border); font-size:13px;
+  display:flex; justify-content:space-between; gap:var(--s4); flex-wrap:wrap}
+
+/* ------------------------------------------------ motion / reveal */
+.reveal{opacity:0; transform:translateY(14px); transition:opacity 620ms var(--ease), transform 620ms var(--ease)}
+.reveal.in{opacity:1; transform:none}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms !important; transition-duration:.001ms !important; scroll-behavior:auto !important}
+  .reveal{opacity:1; transform:none}
+}
+@media print{
+  .header,.hero-actions,.calc-toolbar,.btn,.nav,.footer,.quiz,.map-tabs{display:none !important}
+  body{background:#fff}
+  .card{box-shadow:none; border:1px solid #ccc; break-inside:avoid}
+  .section{padding:12px 0}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#calc">Перейти к калькулятору</a>
+
+<header class="header">
+  <div class="wrap header-in">
+    <a class="brand" href="#top">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg>
+      </span>
+      ЭнергоКалькулятор&nbsp;25
+    </a>
+    <nav class="nav" aria-label="Основная навигация">
+      <a href="#passport">Паспорт</a>
+      <a href="#calc">Калькулятор</a>
+      <a href="#solar">Солнце</a>
+      <a href="#map">Схема</a>
+      <a href="#quiz">Викторина</a>
+      <a href="#report">Отчёт</a>
+    </nav>
+    <span class="header-meta">Проект Д. Железнякова, 9 «А» класс</span>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- ============================== HERO ============================== -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <span class="eyebrow">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>
+          XX Республиканский конкурс «Энергомарафон»
+        </span>
+        <h1>Энергопаспорт школы:<br>от аудита к экономии</h1>
+        <p class="lead">Интерактивный расчёт энергосберегающих мероприятий для ГУО «Средняя школа
+          № 25 г. Гомеля имени Б. А. Царикова». Включайте мероприятия — и сразу видите,
+          сколько киловатт-часов, рублей и тонн CO₂ это принесёт.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#calc">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="4" y="2" width="16" height="20" rx="3"/><path d="M8 6h8M8 11h2M8 15h2M14 11h2M14 15h2"/></svg>
+            Открыть калькулятор
+          </a>
+          <a class="btn btn-ghost" href="#passport">Энергопаспорт школы</a>
+        </div>
+        <div class="chips">
+          <span class="chip"><b id="chip1">—</b> кВт·ч в год</span>
+          <span class="chip"><b id="chip2">—</b> — на освещение</span>
+          <span class="chip"><b id="chip3">—</b> — потенциал экономии</span>
+        </div>
+      </div>
+      <div class="card hero-card">
+        <div class="hero-figure">
+          <p class="small muted" style="margin:0 0 4px; font-weight:700">Итог проекта при полном внедрении</p>
+          <div class="kpi-row">
+            <div class="kpi accent"><div class="v" data-kpi="kwh">—</div><div class="l">экономия, кВт·ч в год</div></div>
+            <div class="kpi green"><div class="v" data-kpi="money">—</div><div class="l">экономия, руб. в год</div></div>
+            <div class="kpi"><div class="v" data-kpi="payback">—</div><div class="l">срок окупаемости</div></div>
+            <div class="kpi green"><div class="v" data-kpi="co2">—</div><div class="l">меньше CO₂ в год</div></div>
+          </div>
+          <p class="small muted" style="margin:var(--s3) 0 0">Все цифры совпадают с таблицами конкурсной
+            работы: расчётная модель в приложении и в документе — одна и та же.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== ПАСПОРТ ============================== -->
+  <section class="section" id="passport">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">Шаг 1 · Энергоаудит</span>
+        <h2>Что мы посчитали</h2>
+        <p>В школе 1 266 светильников семи типов. Мы пересчитали каждый по помещениям,
+           определили время работы и получили структуру потребления. Освещение — самая
+           крупная статья: почти половина счёта за электричество.</p>
+      </div>
+
+      <div class="stats reveal">
+        <div class="stat"><div class="v" data-stat="area">—</div><div class="u">м² площадь здания</div></div>
+        <div class="stat"><div class="v" data-stat="pupils">—</div><div class="u">учащихся</div></div>
+        <div class="stat"><div class="v" data-stat="lamps">—</div><div class="u">светильников</div></div>
+        <div class="stat"><div class="v" data-stat="unit">—</div><div class="u">кВт·ч/м² в год (удельный расход)</div></div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card reveal">
+          <h3 style="font-size:17px;margin-bottom:var(--s4)">Структура электропотребления</h3>
+          <div style="display:flex;gap:var(--s5);align-items:center;flex-wrap:wrap">
+            <div id="donut" style="flex:0 0 auto"></div>
+            <ul class="legend" id="donut-legend" style="flex:1 1 220px"></ul>
+          </div>
+        </div>
+        <div class="card reveal">
+          <h3 style="font-size:17px;margin-bottom:var(--s4)">Лампы: количество против расхода</h3>
+          <div id="lampbars"></div>
+          <p class="small muted" style="margin:var(--s4) 0 0">Лампы накаливания — 32 % светильников,
+            но 38 % расхода на освещение. Поэтому их замена даёт самый быстрый эффект.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== КАЛЬКУЛЯТОР ============================== -->
+  <section class="section" id="calc" style="background:linear-gradient(180deg,rgba(255,255,255,0),rgba(255,255,255,.7) 40%,rgba(255,255,255,0))">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">Шаг 2 · Расчёт</span>
+        <h2>Калькулятор мероприятий</h2>
+        <p>Включайте и выключайте мероприятия — результат пересчитывается мгновенно.
+           Так же считали и мы: от исходного состояния, без двойного учёта экономии.</p>
+      </div>
+
+      <div class="calc">
+        <div>
+          <div class="calc-toolbar reveal">
+            <button class="btn btn-primary btn-sm" id="all-on" type="button">Включить все</button>
+            <button class="btn btn-ghost btn-sm" id="all-off" type="button">Сбросить</button>
+            <button class="btn btn-ghost btn-sm" id="base-on" type="button">Базовый сценарий (I очередь)</button>
+            <span class="hint" id="count-label" aria-live="polite"></span>
+          </div>
+          <div id="measures" class="reveal"></div>
+
+          <details class="card reveal" style="margin-top:var(--s5)">
+            <summary style="cursor:pointer;font-weight:800;font-size:15.5px">Исходные данные и тарифы</summary>
+            <div class="grid-2" style="margin-top:var(--s4);gap:var(--s4)">
+              <div class="field">
+                <label for="tariff-e">Тариф на электроэнергию, руб./кВт·ч</label>
+                <input id="tariff-e" type="number" step="0.0001" min="0.05" max="2" value="0.3186">
+                <span class="hint">Для учреждения — средний тариф 2026 года</span>
+              </div>
+              <div class="field">
+                <label for="tariff-h">Тариф на тепловую энергию, руб./Гкал</label>
+                <input id="tariff-h" type="number" step="0.01" min="10" max="500" value="168.45">
+                <span class="hint">Используется для мероприятия М6</span>
+              </div>
+              <div class="field">
+                <label for="co2k">Коэффициент выбросов, кг CO₂/кВт·ч</label>
+                <input id="co2k" type="number" step="0.01" min="0.05" max="1" value="0.42">
+                <span class="hint">Энергосистема Республики Беларусь</span>
+              </div>
+              <div class="field">
+                <label for="area">Площадь здания, м²</label>
+                <input id="area" type="number" step="10" min="500" max="50000" value="6480">
+                <span class="hint">Нужна для удельного расхода</span>
+              </div>
+            </div>
+            <p class="small muted" style="margin:var(--s4) 0 0">Чтобы применить калькулятор к другой
+              школе, поменяйте значения в этом блоке — формулы останутся теми же.</p>
+          </details>
+        </div>
+
+        <div class="result reveal" aria-live="polite">
+          <div class="result-hero">
+            <div class="l">Экономия электроэнергии</div>
+            <div class="big"><span data-res="kwh">0</span> <span style="font-size:.5em;opacity:.85">кВт·ч/год</span></div>
+            <div class="sub">это <b data-res="share">0</b> % годового потребления школы</div>
+            <div class="result-grid">
+              <div><div class="v" data-res="money">0</div><div class="l">руб. в год (электро)</div></div>
+              <div><div class="v" data-res="invest">0</div><div class="l">затраты, руб.</div></div>
+              <div><div class="v" data-res="payback">—</div><div class="l">окупаемость</div></div>
+              <div><div class="v" data-res="co2">0</div><div class="l">кг CO₂ в год</div></div>
+            </div>
+            <div class="verdict" data-res="verdict">—</div>
+          </div>
+          <div class="card" style="margin-top:var(--s4);padding:var(--s4)">
+            <p class="small muted" style="margin:0 0 var(--s3);font-weight:700">Потребление: до и после</p>
+            <div class="bars">
+              <div class="bar-row"><span>до</span><div class="bar-track"><div class="bar-fill" id="bar-before" style="background:var(--indigo-300)"></div></div><span class="val" id="val-before">—</span></div>
+              <div class="bar-row"><span>после</span><div class="bar-track"><div class="bar-fill" id="bar-after"></div></div><span class="val" id="val-after">—</span></div>
+            </div>
+            <p class="small muted" style="margin:var(--s4) 0 0">Вклад выбранных мероприятий, кВт·ч/год</p>
+            <div class="bars" id="contrib"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== СОЛНЦЕ ============================== -->
+  <section class="section" id="solar">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">Шаг 3 · Возобновляемая энергетика</span>
+        <h2>Солнечная станция: симулятор</h2>
+        <p>Станция мощностью 1 кВт на южном фасаде — учебный стенд. Выберите месяц, погоду
+           и время суток, чтобы увидеть, сколько она вырабатывает именно сейчас.</p>
+      </div>
+
+      <div class="solar">
+        <div class="card reveal">
+          <div class="field" style="margin-top:0">
+            <label id="lbl-month">Месяц</label>
+            <div class="months" id="months" role="group" aria-labelledby="lbl-month"></div>
+          </div>
+          <div class="field">
+            <label id="lbl-weather">Погода</label>
+            <div class="seg" id="weather" role="group" aria-labelledby="lbl-weather">
+              <button type="button" data-w="1" aria-pressed="true">Ясно</button>
+              <button type="button" data-w="0.55" aria-pressed="false">Облачно</button>
+              <button type="button" data-w="0.25" aria-pressed="false">Пасмурно</button>
+            </div>
+          </div>
+          <div class="field">
+            <label for="hour">Время суток: <b id="hour-label">13:00</b></label>
+            <input id="hour" type="range" min="5" max="21" step="1" value="13" aria-describedby="hour-hint">
+            <span class="hint" id="hour-hint">Передвиньте ползунок, чтобы изменить время</span>
+          </div>
+          <div class="readout">
+            <div><div class="v" data-solar="power">—</div><div class="l">кВт сейчас</div></div>
+            <div><div class="v" data-solar="day">—</div><div class="l">кВт·ч за сутки</div></div>
+            <div><div class="v" data-solar="soc">—</div><div class="l">заряд батареи</div></div>
+          </div>
+          <p class="small muted" style="margin:var(--s4) 0 0">За год станция выработает
+            <b id="solar-year">—</b> кВт·ч. Экономия — <b id="solar-money">—</b> руб. в год,
+            окупаемость — <b id="solar-payback">—</b>. Мы честно указываем это в работе:
+            стенд нужен не для экономии, а для обучения.</p>
+        </div>
+
+        <div class="card reveal">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
+            <h3 style="font-size:17px">Выработка за сутки</h3>
+            <span class="small muted" id="solar-caption">—</span>
+          </div>
+          <div id="solarchart" style="margin-top:var(--s4)"></div>
+          <p class="small muted" style="margin:var(--s3) 0 0">Пунктир — собственное потребление
+            стенда (зарядка устройств и подсветка экрана). Всё, что выше пунктира, заряжает
+            аккумулятор; всё, что ниже, — берётся из него.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== СХЕМА ============================== -->
+  <section class="section" id="map">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">Шаг 4 · Где именно</span>
+        <h2>Схема школы по этажам</h2>
+        <p>Схема показывает, в каких помещениях какие светильники. Щёлкните по помещению —
+           увидите его расход и потенциал экономии. Цвет — тип источника света.</p>
+      </div>
+
+      <div class="map-tabs reveal" role="tablist" aria-label="Этаж">
+        <button class="btn btn-ghost btn-sm" role="tab" aria-selected="true" data-floor="0">1 этаж</button>
+        <button class="btn btn-ghost btn-sm" role="tab" aria-selected="false" data-floor="1">2 этаж</button>
+        <button class="btn btn-ghost btn-sm" role="tab" aria-selected="false" data-floor="2">3 этаж</button>
+      </div>
+
+      <div class="plan">
+        <div class="card reveal" style="padding:var(--s4)">
+          <div id="plan"></div>
+          <div class="legend-map" id="plan-legend"></div>
+        </div>
+        <div class="card room-card reveal" id="room-card">
+          <h3>Выберите помещение</h3>
+          <p class="small muted" style="margin:0">Нажмите на любое помещение на плане,
+            чтобы увидеть количество светильников, расход и потенциал экономии.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== ВИКТОРИНА ============================== -->
+  <section class="section" id="quiz" style="background:linear-gradient(180deg,rgba(255,255,255,0),rgba(255,255,255,.75) 30%,rgba(255,255,255,0))">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">Шаг 5 · Проверь себя</span>
+        <h2>Викторина на 8 вопросов</h2>
+        <p>Мы проводили её на классных часах. Отвечайте — после каждого ответа появится
+           пояснение, чтобы было понятно, почему именно так.</p>
+      </div>
+      <div class="card quiz reveal" id="quiz-box"></div>
+    </div>
+  </section>
+
+  <!-- ============================== ОТЧЁТ ============================== -->
+  <section class="section" id="report">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">Шаг 6 · Результат</span>
+        <h2>Отчёт по выбранному сценарию</h2>
+        <p>Итоговая таблица формируется по тем мероприятиям, которые включены
+           в калькуляторе. Её можно распечатать или выгрузить в табличный редактор.</p>
+      </div>
+      <div class="card report reveal">
+        <div class="table-scroll">
+          <table id="report-table">
+            <caption class="sr-only">Смета и экономия по выбранным мероприятиям</caption>
+            <thead>
+              <tr><th>Код</th><th>Мероприятие</th><th style="text-align:right">Экономия, кВт·ч</th>
+                  <th style="text-align:right">Затраты, руб.</th><th style="text-align:right">Экономия, руб./год</th>
+                  <th style="text-align:right">Окупаемость</th></tr>
+            </thead>
+            <tbody id="report-body"></tbody>
+            <tfoot id="report-foot"></tfoot>
+          </table>
+        </div>
+        <div class="calc-toolbar" style="margin:var(--s5) 0 0">
+          <button class="btn btn-accent btn-sm" id="csv" type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 21h16"/></svg>
+            Скачать CSV
+          </button>
+          <button class="btn btn-ghost btn-sm" id="print" type="button">Печать / PDF</button>
+          <span class="hint" id="csv-hint"></span>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <h4>О проекте</h4>
+        <p style="margin:0 0 10px">«Энергопаспорт школы: от аудита к экономии» — проект
+          для XX Республиканского конкурса «Энергомарафон», номинация «Проект практических
+          мероприятий по энергосбережению, энергоэффективности и возобновляемой энергии».</p>
+        <p style="margin:0"><b style="color:var(--color-fg)">Автор:</b> Железняков Дмитрий
+          Михайлович, учащийся 9 «А» класса ГУО «Средняя школа № 25 г. Гомеля
+          имени Б. А. Царикова».</p>
+      </div>
+      <div>
+        <h4>Источники</h4>
+        <ul>
+          <li><a href="https://energoeffect.gov.by" target="_blank" rel="noopener">Департамент по энергоэффективности</a></li>
+          <li><a href="https://pravo.by" target="_blank" rel="noopener">Закон «Об энергосбережении» № 239-З</a></li>
+          <li><a href="https://adu.by" target="_blank" rel="noopener">Национальный образовательный портал</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Как пользоваться</h4>
+        <ul>
+          <li>Работает без интернета</li>
+          <li>Один файл, установка не нужна</li>
+          <li>Телефон, планшет, компьютер</li>
+        </ul>
+      </div>
+    </div>
+    <div class="credits">
+      <span>© 2026, Железняков Д. М. · Гомель</span>
+      <span>Расчётная модель едина для документа и приложения</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+"use strict";
+/* =====================================================================
+   ДАННЫЕ. Значения совпадают с таблицами конкурсной работы.
+   ===================================================================== */
+const DATA = {
+ "school": {
+  "name": "ГУО «Средняя школа № 25 г. Гомеля имени Б. А. Царикова»",
+  "area": 6480,
+  "pupils": 1012,
+  "teachers": 78,
+  "staff": 96,
+  "floors": 3,
+  "cabinets": 42,
+  "year_built": 1985,
+  "heat_gcal": 620.0
+ },
+ "E_total": 195222,
+ "E_light": 79222,
+ "N_lamp": 1266,
+ "unit": 30.13,
+ "share_light": 40.6,
+ "save_share": 32.5,
+ "M_E": 63424,
+ "MONEY_TOTAL": 23862.0,
+ "PAYBACK": 2.06,
+ "CO2_TOTAL": 31685,
+ "INVEST": 49109.0,
+ "tariff_e": 0.3186,
+ "tariff_h": 168.45,
+ "k_co2_e": 0.42,
+ "k_co2_h": 0.2,
+ "gcal_to_kwh": 1163,
+ "measures": [
+  {
+   "code": "М1",
+   "name": "Замена ламп накаливания на светодиодные (406 шт.)",
+   "detail": "лестницы, тамбуры, санузлы, подсобные и технические помещения",
+   "e": 26462,
+   "cost": 2904.0,
+   "note": "срок службы LED — 25 000 ч вместо 1 000 ч",
+   "money": 8431.0,
+   "payback": 0.34
+  },
+  {
+   "code": "М2",
+   "name": "Замена люминесцентных светильников на LED-панели (710 шт.)",
+   "detail": "кабинеты, коридоры, рекреации, спортзал",
+   "e": 27220,
+   "cost": 42420,
+   "note": "экономия также за счёт отсутствия потерь в дросселях",
+   "money": 8672.0,
+   "payback": 4.89
+  },
+  {
+   "code": "М3",
+   "name": "Датчики движения и присутствия (46 шт.)",
+   "detail": "коридоры, рекреации, санузлы, лестничные клетки",
+   "e": 4306,
+   "cost": 1932,
+   "note": "сокращение времени горения на 45 % в зонах периодического пребывания",
+   "money": 1372.0,
+   "payback": 1.41
+  },
+  {
+   "code": "М4",
+   "name": "Датчики освещённости (12 кабинетов на солнечной стороне)",
+   "detail": "кабинеты № 12, 14, 16, 21, 23, 25, 31—35",
+   "e": 756,
+   "cost": 660,
+   "note": "отключение рядов светильников у окон при достаточной естественной освещённости",
+   "money": 241.0,
+   "payback": 2.74
+  },
+  {
+   "code": "М5",
+   "name": "Энергосберегающие профили ИТ-оборудования",
+   "detail": "настройка спящего режима ПК и проекторов, отключение на переменах и после уроков",
+   "e": 4680,
+   "cost": 0,
+   "note": "не требует затрат, закрепляется приказом по учреждению",
+   "money": 1491.0,
+   "payback": 0.0
+  }
+ ],
+ "M6": {
+  "code": "М6",
+  "name": "Теплоотражающие экраны за радиаторами (38 шт.) и уплотнение оконных притворов (26 шт.)",
+  "detail": "кабинеты 1—3 этажей, рекреации",
+  "gcal": 21.7,
+  "money": 3655.0,
+  "cost": 1193,
+  "note": "снижение теплопотерь на 3,5 %",
+  "payback": 0.33
+ },
+ "M7": {
+  "code": "М7",
+  "name": "Солнечная зарядная станция — учебный стенд ВИЭ (1 кВт)",
+  "detail": "4 фотоэлектрических модуля по 250 Вт, MPPT-контроллер, аккумулятор 12,8 В / 100 А·ч, USB-панель, информационный экран",
+  "gen": 890,
+  "money": 284.0,
+  "cost": 5140,
+  "note": "выработка 890 кВт·ч в год (удельная выработка 890 кВт·ч/кВт установленной мощности)",
+  "payback": 18.1
+ },
+ "solar_gen": 890,
+ "solar_kwp": 1.0,
+ "solar_month": [
+  [
+   "Январь",
+   25
+  ],
+  [
+   "Февраль",
+   40
+  ],
+  [
+   "Март",
+   75
+  ],
+  [
+   "Апрель",
+   105
+  ],
+  [
+   "Май",
+   125
+  ],
+  [
+   "Июнь",
+   125
+  ],
+  [
+   "Июль",
+   125
+  ],
+  [
+   "Август",
+   110
+  ],
+  [
+   "Сентябрь",
+   75
+  ],
+  [
+   "Октябрь",
+   45
+  ],
+  [
+   "Ноябрь",
+   22
+  ],
+  [
+   "Декабрь",
+   18
+  ]
+ ],
+ "light": [
+  {
+   "code": "A",
+   "name": "Учебные кабинеты",
+   "type": "ЛЛ 2×36 Вт, ЭмПРА",
+   "n": 420,
+   "p": 86,
+   "t": 700,
+   "e": 25284
+  },
+  {
+   "code": "B",
+   "name": "Кабинеты, спортзал",
+   "type": "ЛЛ 2×36 Вт, ЭПРА",
+   "n": 90,
+   "p": 76,
+   "t": 700,
+   "e": 4788
+  },
+  {
+   "code": "C",
+   "name": "Коридоры, рекреации",
+   "type": "ЛЛ 2×36 Вт, ЭмПРА",
+   "n": 200,
+   "p": 86,
+   "t": 1000,
+   "e": 17200
+  },
+  {
+   "code": "D",
+   "name": "Лестницы, тамбуры",
+   "type": "ЛН 100 Вт",
+   "n": 120,
+   "p": 100,
+   "t": 1500,
+   "e": 18000
+  },
+  {
+   "code": "E",
+   "name": "Санузлы, подсобные",
+   "type": "ЛН 60 Вт",
+   "n": 116,
+   "p": 60,
+   "t": 1000,
+   "e": 6960
+  },
+  {
+   "code": "F",
+   "name": "Техпомещения, подвал",
+   "type": "ЛН 100 Вт",
+   "n": 170,
+   "p": 100,
+   "t": 300,
+   "e": 5100
+  },
+  {
+   "code": "G",
+   "name": "Кабинеты (уже LED)",
+   "type": "LED 18 Вт",
+   "n": 150,
+   "p": 18,
+   "t": 700,
+   "e": 1890
+  }
+ ],
+ "lamp_types": [
+  {
+   "name": "Люминесцентные, ЭмПРА (дроссель)",
+   "lamps": 620,
+   "color": "#FB923C",
+   "count_share": 49.0,
+   "power_share": 53.6
+  },
+  {
+   "name": "Лампы накаливания",
+   "lamps": 406,
+   "color": "#EF4444",
+   "count_share": 32.1,
+   "power_share": 37.9
+  },
+  {
+   "name": "Светодиодные (LED)",
+   "lamps": 150,
+   "color": "#059669",
+   "count_share": 11.8,
+   "power_share": 2.4
+  },
+  {
+   "name": "Люминесцентные, ЭПРА (электронные)",
+   "lamps": 90,
+   "color": "#FBBF24",
+   "count_share": 7.1,
+   "power_share": 6.0
+  }
+ ],
+ "structure": [
+  {
+   "name": "Освещение",
+   "value": 79222,
+   "color": "#EA580C"
+  },
+  {
+   "name": "Компьютерная техника, проекторы, оргтехника",
+   "value": 46800,
+   "color": "#4F46E5"
+  },
+  {
+   "name": "Столовая",
+   "value": 31400,
+   "color": "#818CF8"
+  },
+  {
+   "name": "Вентиляция, насосы, тепловой пункт",
+   "value": 19600,
+   "color": "#A5B4FC"
+  },
+  {
+   "name": "Мастерские, спортзал, актовый зал",
+   "value": 11200,
+   "color": "#C7D2FE"
+  },
+  {
+   "name": "Прочие потребители",
+   "value": 7000,
+   "color": "#E0E7FF"
+  }
+ ],
+ "plan": [
+  [
+   {
+    "name": "Вестибюль, гардероб",
+    "type": "C",
+    "n": 30,
+    "x": 20,
+    "y": 20,
+    "w": 190,
+    "h": 120
+   },
+   {
+    "name": "Кабинет 1",
+    "type": "A",
+    "n": 35,
+    "x": 230,
+    "y": 20,
+    "w": 190,
+    "h": 120
+   },
+   {
+    "name": "Кабинет 2",
+    "type": "A",
+    "n": 30,
+    "x": 440,
+    "y": 20,
+    "w": 190,
+    "h": 120
+   },
+   {
+    "name": "Пищеблок, подсобные",
+    "type": "F",
+    "n": 70,
+    "x": 650,
+    "y": 20,
+    "w": 190,
+    "h": 120
+   },
+   {
+    "name": "Рекреация 1 этажа",
+    "type": "C",
+    "n": 50,
+    "x": 120,
+    "y": 150,
+    "w": 640,
+    "h": 100
+   },
+   {
+    "name": "Лестница 1",
+    "type": "D",
+    "n": 25,
+    "x": 20,
+    "y": 150,
+    "w": 90,
+    "h": 100
+   },
+   {
+    "name": "Лестница 2",
+    "type": "D",
+    "n": 20,
+    "x": 770,
+    "y": 150,
+    "w": 90,
+    "h": 100
+   },
+   {
+    "name": "Кабинет 3",
+    "type": "A",
+    "n": 30,
+    "x": 20,
+    "y": 260,
+    "w": 148,
+    "h": 110
+   },
+   {
+    "name": "Кабинет 4",
+    "type": "A",
+    "n": 35,
+    "x": 180,
+    "y": 260,
+    "w": 148,
+    "h": 110
+   },
+   {
+    "name": "Спортзал",
+    "type": "B",
+    "n": 30,
+    "x": 340,
+    "y": 260,
+    "w": 148,
+    "h": 110
+   },
+   {
+    "name": "Санузлы",
+    "type": "E",
+    "n": 40,
+    "x": 500,
+    "y": 260,
+    "w": 148,
+    "h": 110
+   },
+   {
+    "name": "Кабинет информатики",
+    "type": "G",
+    "n": 40,
+    "x": 660,
+    "y": 260,
+    "w": 148,
+    "h": 110
+   }
+  ],
+  [
+   {
+    "name": "Кабинет 5",
+    "type": "A",
+    "n": 30,
+    "x": 20,
+    "y": 20,
+    "w": 190,
+    "h": 120
+   },
+   {
+    "name": "Кабинет 6",
+    "type": "A",
+    "n": 30,
+    "x": 230,
+    "y": 20,
+    "w": 190,
+    "h": 120
+   },
+   {
+    "name": "Кабинет 7",
+    "type": "A",
+    "n": 30,
+    "x": 440,
+    "y": 20,
+    "w": 190,
+    "h": 120
+   },
+   {
+    "name": "Кабинет 8",
+    "type": "A",
+    "n": 30,
+    "x": 650,
+    "y": 20,
+    "w": 190,
+    "h": 120
+   },
+   {
+    "name": "Рекреация 2 этажа",
+    "type": "C",
+    "n": 70,
+    "x": 120,
+    "y": 150,
+    "w": 640,
+    "h": 100
+   },
+   {
+    "name": "Лестница 3",
+    "type": "D",
+    "n": 20,
+    "x": 20,
+    "y": 150,
+    "w": 90,
+    "h": 100
+   },
+   {
+    "name": "Лестница 4",
+    "type": "D",
+    "n": 20,
+    "x": 770,
+    "y": 150,
+    "w": 90,
+    "h": 100
+   },
+   {
+    "name": "Кабинет 9",
+    "type": "A",
+    "n": 30,
+    "x": 20,
+    "y": 260,
+    "w": 148,
+    "h": 110
+   },
+   {
+    "name": "Актовый зал",
+    "type": "B",
+    "n": 30,
+    "x": 180,
+    "y": 260,
+    "w": 148,
+    "h": 110
+   },
+   {
+    "name": "Санузлы",
+    "type": "E",
+    "n": 38,
+    "x": 340,
+    "y": 260,
+    "w": 148,
+    "h": 110
+   },
+   {
+    "name": "Лаборатория",
+    "type": "F",
+    "n": 50,
+    "x": 500,
+    "y": 260,
+    "w": 148,
+    "h": 110
+   },
+   {
+    "name": "Кабинет информатики",
+    "type": "G",
+    "n": 60,
+    "x": 660,
+    "y": 260,
+    "w": 148,
+    "h": 110
+   }
+  ],
+  [
+   {
+    "name": "Кабинет 10",
+    "type": "A",
+    "n": 28,
+    "x": 20,
+    "y": 20,
+    "w": 190,
+    "h": 120
+   },
+   {
+    "name": "Кабинет 11",
+    "type": "A",
+    "n": 28,
+    "x": 230,
+    "y": 20,
+    "w": 190,
+    "h": 120
+   },
+   {
+    "name": "Кабинет 12",
+    "type": "A",
+    "n": 28,
+    "x": 440,
+    "y": 20,
+    "w": 190,
+    "h": 120
+   },
+   {
+    "name": "Кабинет 13",
+    "type": "A",
+    "n": 28,
+    "x": 650,
+    "y": 20,
+    "w": 190,
+    "h": 120
+   },
+   {
+    "name": "Рекреация 3 этажа",
+    "type": "C",
+    "n": 50,
+    "x": 120,
+    "y": 150,
+    "w": 640,
+    "h": 100
+   },
+   {
+    "name": "Лестница 5",
+    "type": "D",
+    "n": 18,
+    "x": 20,
+    "y": 150,
+    "w": 90,
+    "h": 100
+   },
+   {
+    "name": "Лестница 6",
+    "type": "D",
+    "n": 17,
+    "x": 770,
+    "y": 150,
+    "w": 90,
+    "h": 100
+   },
+   {
+    "name": "Кабинет 14",
+    "type": "A",
+    "n": 28,
+    "x": 20,
+    "y": 260,
+    "w": 148,
+    "h": 110
+   },
+   {
+    "name": "Библиотека",
+    "type": "B",
+    "n": 30,
+    "x": 180,
+    "y": 260,
+    "w": 148,
+    "h": 110
+   },
+   {
+    "name": "Санузлы",
+    "type": "E",
+    "n": 38,
+    "x": 340,
+    "y": 260,
+    "w": 148,
+    "h": 110
+   },
+   {
+    "name": "Техпомещения",
+    "type": "F",
+    "n": 50,
+    "x": 500,
+    "y": 260,
+    "w": 148,
+    "h": 110
+   },
+   {
+    "name": "Кабинет информатики",
+    "type": "G",
+    "n": 50,
+    "x": 660,
+    "y": 260,
+    "w": 148,
+    "h": 110
+   }
+  ]
+ ]
+};
+
+const MONTHS_SHORT = ["Янв","Фев","Мар","Апр","Май","Июн","Июл","Авг","Сен","Окт","Ноя","Дек"];
+const MONTHS_FULL = ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- форматирование ---------- */
+const nf  = (n, d = 0) => Number(n).toLocaleString("ru-RU", {minimumFractionDigits:d, maximumFractionDigits:d});
+const nf0 = (n) => nf(n, 0);
+const pl  = (n, one, few, many) => {
+  const a = Math.abs(Math.round(n)) % 100, b = a % 10;
+  if (a > 10 && a < 20) return many;
+  if (b > 1 && b < 5) return few;
+  if (b === 1) return one;
+  return many;
+};
+
+/* =====================================================================
+   СОСТОЯНИЕ
+   ===================================================================== */
+const state = {
+  on: Object.fromEntries(DATA.measures.map(m => [m.code, true])),
+  onM6: true,
+  tariffE: DATA.tariff_e,
+  tariffH: DATA.tariff_h,
+  co2k: DATA.k_co2_e,
+  area: DATA.school.area,
+  floor: 0, month: 4, hour: 13, weather: 1
+};
+
+/* =====================================================================
+   РАСЧЁТ
+   ===================================================================== */
+function totals(){
+  let kwh = 0, inv = 0;
+  DATA.measures.forEach(m => { if (state.on[m.code]) { kwh += m.e; inv += m.cost; } });
+  let heatMoney = 0, heatGcal = 0;
+  if (state.onM6){
+    heatGcal = DATA.M6.gcal;
+    heatMoney = heatGcal * state.tariffH;
+    inv += DATA.M6.cost;
+  }
+  const money = kwh * state.tariffE + heatMoney;
+  const co2 = Math.round(kwh * state.co2k) + Math.round(heatGcal * DATA.gcal_to_kwh * DATA.k_co2_h);
+  const payback = money > 0 ? inv / money : 0;
+  return { kwh, inv, money, heatMoney, heatGcal, co2, payback };
+}
+
+/* =====================================================================
+   АНИМИРОВАННЫЕ ЧИСЛА
+   ===================================================================== */
+const animState = new WeakMap();
+function setNum(el, value, decimals = 0, suffix = ""){
+  if (!el) return;
+  const prev = animState.get(el) ?? 0;
+  animState.set(el, value);
+  const fmt = v => nf(v, decimals) + suffix;
+  if (reduceMotion){ el.textContent = fmt(value); return; }
+  const t0 = performance.now(), dur = 520;
+  cancelAnimationFrame(el._raf);
+  const step = (t) => {
+    const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+    el.textContent = fmt(prev + (value - prev) * e);
+    if (k < 1) el._raf = requestAnimationFrame(step);
+  };
+  el._raf = requestAnimationFrame(step);
+}
+
+/* =====================================================================
+   ХИРО / СТАТИСТИКА
+   ===================================================================== */
+function fillHero(){
+  const t = totals();
+  document.getElementById("chip1").textContent = nf0(DATA.E_total);
+  document.getElementById("chip2").textContent = nf(DATA.share_light, 1) + " %";
+  document.getElementById("chip3").textContent = nf(DATA.save_share, 1) + " %";
+  document.querySelectorAll("[data-kpi]").forEach(el => {
+    const k = el.dataset.kpi;
+    if (k === "kwh")   { el.textContent = nf0(DATA.M_E); el.nextElementSibling.textContent = "экономия, кВт·ч в год"; }
+    if (k === "money") { el.textContent = nf0(DATA.MONEY_TOTAL); }
+    if (k === "payback"){ el.textContent = nf(DATA.PAYBACK, 2) + " года"; }
+    if (k === "co2")   { el.textContent = nf(DATA.CO2_TOTAL / 1000, 1) + " т"; }
+  });
+  document.querySelectorAll("[data-stat]").forEach(el => {
+    const k = el.dataset.stat;
+    if (k === "area")   el.textContent = nf0(DATA.school.area);
+    if (k === "pupils") el.textContent = nf0(DATA.school.pupils);
+    if (k === "lamps")  el.textContent = nf0(DATA.N_lamp);
+    if (k === "unit")   el.textContent = nf(DATA.unit, 2);
+  });
+}
+
+/* =====================================================================
+   SVG-ХЕЛПЕРЫ
+   ===================================================================== */
+function svgEl(name, attrs){
+  const el = document.createElementNS("http://www.w3.org/2000/svg", name);
+  for (const k in attrs) el.setAttribute(k, attrs[k]);
+  return el;
+}
+
+/* ---------- donut ---------- */
+function drawDonut(){
+  const parts = DATA.structure;
+  const total = parts.reduce((s, p) => s + p.value, 0);
+  const size = 210, r = 78, cx = size / 2, cy = size / 2, w = 34;
+  const svg = svgEl("svg", {viewBox:`0 0 ${size} ${size}`, width:size, height:size, role:"img",
+    "aria-label":"Круговая диаграмма структуры электропотребления"});
+  let a0 = -Math.PI / 2;
+  parts.forEach((p, i) => {
+    const a1 = a0 + (p.value / total) * Math.PI * 2;
+    const large = (a1 - a0) > Math.PI ? 1 : 0;
+    const x0 = cx + r * Math.cos(a0), y0 = cy + r * Math.sin(a0);
+    const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
+    const path = svgEl("path", {
+      d:`M ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1}`,
+      stroke:p.color, "stroke-width":w, fill:"none", "stroke-linecap":"butt"
+    });
+    svg.appendChild(path);
+    a0 = a1;
+  });
+  const t = svgEl("text", {x:cx, y:cy - 2, "text-anchor":"middle", "font-size":"19", "font-weight":"800",
+    fill:"#1E1B4B", "font-family":"var(--font)"});
+  t.textContent = nf0(total);
+  const t2 = svgEl("text", {x:cx, y:cy + 18, "text-anchor":"middle", "font-size":"11.5",
+    fill:"#475569", "font-family":"var(--font)"});
+  t2.textContent = "кВт·ч в год";
+  svg.append(t, t2);
+  document.getElementById("donut").appendChild(svg);
+
+  const ul = document.getElementById("donut-legend");
+  parts.forEach(p => {
+    const li = document.createElement("li");
+    li.innerHTML = `<span class="dot" style="background:${p.color}"></span>${p.name}
+      <b>${nf(p.value)} <span class="muted small">(${nf(p.value / total * 100, 1)} %)</span></b>`;
+    ul.appendChild(li);
+  });
+}
+
+/* ---------- сравнение типов ламп ---------- */
+function drawLampBars(){
+  const g = DATA.lamp_types;
+  const maxV = Math.max(...g.map(x => Math.max(x.count_share, x.power_share)));
+  const box = document.getElementById("lampbars");
+  box.innerHTML = "";
+  g.forEach(x => {
+    const row = document.createElement("div");
+    row.style.marginBottom = "14px";
+    row.innerHTML = `
+      <div style="display:flex;justify-content:space-between;font-size:13.5px;font-weight:700;margin-bottom:6px">
+        <span>${x.name}</span><span class="muted">${nf0(x.lamps)} шт.</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div class="bar-track" style="flex:1"><div class="bar-fill" style="width:${x.count_share / maxV * 100}%;background:${x.color}"></div></div>
+        <span class="small muted" style="width:74px;text-align:right">${nf(x.count_share, 0)} % шт.</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="bar-track" style="flex:1"><div class="bar-fill" style="width:${x.power_share / maxV * 100}%;background:${x.color};opacity:.45"></div></div>
+        <span class="small muted" style="width:74px;text-align:right">${nf(x.power_share, 0)} % кВт·ч</span>
+      </div>`;
+    box.appendChild(row);
+  });
+}
+
+/* =====================================================================
+   КАЛЬКУЛЯТОР
+   ===================================================================== */
+function buildMeasures(){
+  const box = document.getElementById("measures");
+  box.innerHTML = "";
+  DATA.measures.forEach(m => {
+    const card = document.createElement("div");
+    card.className = "measure is-on";
+    card.dataset.code = m.code;
+    card.innerHTML = `
+      <span class="code">${m.code}</span>
+      <div>
+        <div class="name">${m.name}</div>
+        <div class="sub">${m.detail}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px">
+        <div class="nums"><b>−${nf0(m.e)}</b>кВт·ч/год · ${nf0(m.cost)} руб.</div>
+        <button class="switch" role="switch" aria-checked="true"
+                aria-label="Мероприятие ${m.code}: ${m.name}"></button>
+      </div>`;
+    const sw = card.querySelector(".switch");
+    sw.addEventListener("click", () => toggleMeasure(m.code));
+    box.appendChild(card);
+  });
+
+  // теплотехническое мероприятие
+  const heat = document.createElement("div");
+  heat.className = "measure is-on";
+  heat.dataset.code = "M6";
+  heat.innerHTML = `
+    <span class="code">М6</span>
+    <div>
+      <div class="name">${DATA.M6.name}</div>
+      <div class="sub">${DATA.M6.detail} · экономия ${nf(DATA.M6.gcal, 1)} Гкал</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px">
+      <div class="nums"><b>−${nf0(DATA.M6.gcal * state.tariffH)}</b>руб./год · ${nf0(DATA.M6.cost)} руб.</div>
+      <button class="switch" role="switch" aria-checked="true" aria-label="Мероприятие М6"></button>
+    </div>`;
+  heat.querySelector(".switch").addEventListener("click", () => {
+    state.onM6 = !state.onM6;
+    heat.querySelector(".switch").setAttribute("aria-checked", String(state.onM6));
+    heat.classList.toggle("is-on", state.onM6);
+    update();
+  });
+  box.appendChild(heat);
+}
+
+function toggleMeasure(code){
+  state.on[code] = !state.on[code];
+  const card = document.querySelector(`[data-code="${code}"]`);
+  card.classList.toggle("is-on", state.on[code]);
+  card.querySelector(".switch").setAttribute("aria-checked", String(state.on[code]));
+  update();
+}
+
+function setAll(value, codes){
+  (codes || DATA.measures.map(m => m.code)).forEach(c => { state.on[c] = value; });
+  if (!codes || codes.includes("M6")) state.onM6 = value;
+  document.querySelectorAll(".measure").forEach(card => {
+    const code = card.dataset.code;
+    const on = code === "M6" ? state.onM6 : state.on[code];
+    card.classList.toggle("is-on", on);
+    card.querySelector(".switch").setAttribute("aria-checked", String(on));
+  });
+  update();
+}
+
+function update(){
+  const t = totals();
+  const area = state.area || DATA.school.area;
+  setNum(document.querySelector('[data-res="kwh"]'), t.kwh);
+  document.querySelector('[data-res="share"]').textContent = nf(t.kwh / DATA.E_total * 100, 1);
+  setNum(document.querySelector('[data-res="money"]'), t.money);
+  setNum(document.querySelector('[data-res="invest"]'), t.inv);
+  setNum(document.querySelector('[data-res="co2"]'), t.co2);
+  document.querySelector('[data-res="payback"]').textContent =
+    t.money > 0 ? nf(t.payback, 2) + " года" : "—";
+
+  const after = DATA.E_total - t.kwh;
+  document.getElementById("bar-before").style.width = "100%";
+  document.getElementById("bar-after").style.width = (after / DATA.E_total * 100) + "%";
+  document.getElementById("val-before").textContent = nf0(DATA.E_total);
+  document.getElementById("val-after").textContent = nf0(after);
+
+  // вклад мероприятий
+  const contrib = document.getElementById("contrib");
+  contrib.innerHTML = "";
+  const maxE = Math.max(...DATA.measures.map(m => m.e));
+  DATA.measures.filter(m => state.on[m.code]).forEach(m => {
+    const row = document.createElement("div");
+    row.className = "bar-row";
+    row.innerHTML = `<span title="${m.name}">${m.code}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${m.e / maxE * 100}%;background:var(--color-success)"></div></div>
+      <span class="val">${nf0(m.e)}</span>`;
+    contrib.appendChild(row);
+  });
+  if (!DATA.measures.some(m => state.on[m.code]) && !state.onM6){
+    contrib.innerHTML = '<p class="small muted" style="margin:8px 0 0">Ни одно мероприятие не выбрано.</p>';
+  }
+
+  // вердикт
+  const v = document.querySelector('[data-res="verdict"]');
+  const cnt = DATA.measures.filter(m => state.on[m.code]).length + (state.onM6 ? 1 : 0);
+  let txt;
+  if (!cnt) txt = "Выберите хотя бы одно мероприятие, чтобы увидеть эффект.";
+  else if (t.payback <= 3 && t.money > 0)
+    txt = `✓ Отличный сценарий: ${nf(t.payback, 2)} года окупаемости при ${nf0(t.inv)} руб. затрат. `
+        + `Это ${pl(t.kwh, "киловатт-час", "киловатт-часа", "киловатт-часов")} и `
+        + `${nf0(t.money)} руб. экономии в год.`;
+  else if (t.payback <= 6)
+    txt = `Приемлемо: окупаемость ${nf(t.payback, 2)} года. Можно добавить мероприятия с нулевыми затратами (М5).`;
+  else
+    txt = `Дорогой сценарий: окупаемость ${nf(t.payback, 2)} года. Начните с М1, М3 и М5 — они дешевле всего.`;
+  v.textContent = txt;
+
+  document.getElementById("count-label").textContent =
+    `Выбрано ${cnt} из 7 мероприятий · удельный расход после внедрения: ${nf(after / area, 2)} кВт·ч/м²`;
+
+  renderReport(t);
+}
+
+/* =====================================================================
+   СОЛНЕЧНАЯ СТАНЦИЯ
+   ===================================================================== */
+function solarDay(){
+  const monthly = DATA.solar_month[state.month][1] * DATA.solar_kwp;
+  const dayEnergy = monthly / 30 * state.weather;
+  const sigma = 2.1 + 0.11 * state.month;      // ширина «солнечного» окна по сезону
+  const f = h => Math.exp(-Math.pow(h - 13, 2) / (2 * sigma * sigma));
+  let sum = 0;
+  for (let h = 5; h <= 21; h++) sum += f(h);
+  const power = h => dayEnergy * f(h) / sum;
+  return {dayEnergy, power};
+}
+
+function drawSolarChart(){
+  const {dayEnergy, power} = solarDay();
+  const W = 620, H = 260, padL = 44, padR = 14, padT = 18, padB = 34;
+  const iw = W - padL - padR, ih = H - padT - padB;
+  const hours = []; for (let h = 5; h <= 21; h += 0.25) hours.push(h);
+  const maxP = Math.max(0.12, ...hours.map(power)) * 1.15;
+  const X = h => padL + (h - 5) / 16 * iw;
+  const Y = p => padT + ih - (p / maxP) * ih;
+
+  const svg = svgEl("svg", {viewBox:`0 0 ${W} ${H}`, role:"img",
+    "aria-label":"График выработки солнечной станции в течение суток"});
+  // сетка
+  for (let i = 0; i <= 4; i++){
+    const y = padT + ih * i / 4;
+    svg.appendChild(svgEl("line", {x1:padL, x2:W - padR, y1:y, y2:y, stroke:"#E2E8F0", "stroke-width":1}));
+    const t = svgEl("text", {x:padL - 8, y:y + 4, "text-anchor":"end", "font-size":"10.5", fill:"#64748B"});
+    t.textContent = nf(maxP * (1 - i / 4), 2);
+    svg.appendChild(t);
+  }
+  [6, 9, 12, 15, 18, 21].forEach(h => {
+    const t = svgEl("text", {x:X(h), y:H - 12, "text-anchor":"middle", "font-size":"10.5", fill:"#64748B"});
+    t.textContent = h + ":00";
+    svg.appendChild(t);
+  });
+
+  // площадь выработки
+  let d = `M ${X(5)} ${Y(0)}`;
+  hours.forEach(h => { d += ` L ${X(h)} ${Y(power(h))}`; });
+  d += ` L ${X(21)} ${Y(0)} Z`;
+  const grad = svgEl("linearGradient", {id:"sunGrad", x1:"0", y1:"0", x2:"0", y2:"1"});
+  grad.append(
+    svgEl("stop", {offset:"0%", "stop-color":"#F59E0B", "stop-opacity":".55"}),
+    svgEl("stop", {offset:"100%", "stop-color":"#F59E0B", "stop-opacity":".03"})
+  );
+  const defs = svgEl("defs"); defs.appendChild(grad); svg.appendChild(defs);
+  svg.appendChild(svgEl("path", {d, fill:"url(#sunGrad)"}));
+
+  let dl = "";
+  hours.forEach((h, i) => { dl += `${i ? " L" : "M"} ${X(h)} ${Y(power(h))}`; });
+  svg.appendChild(svgEl("path", {d:dl, fill:"none", stroke:"#EA580C", "stroke-width":2.6, "stroke-linejoin":"round"}));
+
+  // собственное потребление
+  const cons = 0.12;
+  svg.appendChild(svgEl("line", {x1:padL, x2:W - padR, y1:Y(cons), y2:Y(cons),
+    stroke:"#475569", "stroke-width":1.6, "stroke-dasharray":"5 4"}));
+
+  // маркер текущего часа
+  const pNow = power(state.hour);
+  svg.appendChild(svgEl("line", {x1:X(state.hour), x2:X(state.hour), y1:padT, y2:padT + ih,
+    stroke:"#4F46E5", "stroke-width":2, "stroke-dasharray":"3 3"}));
+  svg.appendChild(svgEl("circle", {cx:X(state.hour), cy:Y(pNow), r:6, fill:"#4F46E5", stroke:"#fff", "stroke-width":2.5}));
+
+  const box = document.getElementById("solarchart");
+  box.innerHTML = "";
+  box.appendChild(svg);
+
+  // показания
+  const soc = Math.max(12, Math.min(100, Math.round(20 + dayEnergy * 18)));
+  document.querySelector('[data-solar="power"]').textContent = nf(pNow, 2);
+  document.querySelector('[data-solar="day"]').textContent = nf(dayEnergy, 2);
+  document.querySelector('[data-solar="soc"]').textContent = soc + " %";
+  document.getElementById("solar-caption").textContent =
+    `${MONTHS_FULL[state.month]}, ${state.weather === 1 ? "ясно" : state.weather > 0.4 ? "облачно" : "пасмурно"}`;
+}
+
+function updateSolarMeta(){
+  document.getElementById("solar-year").textContent = nf0(DATA.solar_gen);
+  document.getElementById("solar-money").textContent = nf0(DATA.M7.money);
+  document.getElementById("solar-payback").textContent = nf(DATA.M7.payback, 1) + " года";
+}
+
+function buildSolarControls(){
+  const mbox = document.getElementById("months");
+  MONTHS_SHORT.forEach((m, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = m;
+    b.setAttribute("aria-pressed", String(i === state.month));
+    b.setAttribute("aria-label", MONTHS_FULL[i]);
+    b.addEventListener("click", () => {
+      state.month = i;
+      [...mbox.children].forEach((c, j) => c.setAttribute("aria-pressed", String(j === i)));
+      drawSolarChart();
+    });
+    mbox.appendChild(b);
+  });
+  const wbox = document.getElementById("weather");
+  [...wbox.querySelectorAll("button")].forEach(b => {
+    b.addEventListener("click", () => {
+      state.weather = parseFloat(b.dataset.w);
+      [...wbox.querySelectorAll("button")].forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+      drawSolarChart();
+    });
+  });
+  const hour = document.getElementById("hour");
+  hour.addEventListener("input", () => {
+    state.hour = +hour.value;
+    document.getElementById("hour-label").textContent = String(state.hour).padStart(2, "0") + ":00";
+    drawSolarChart();
+  });
+}
+
+/* =====================================================================
+   СХЕМА ЭТАЖЕЙ
+   ===================================================================== */
+const TYPE_INFO = {
+  A: {label:"Люминесцентные, ЭмПРА", color:"#FDBA74", group:"A"},
+  B: {label:"Люминесцентные, ЭПРА", color:"#FDE68A", group:"B"},
+  C: {label:"Коридоры и рекреации", color:"#A5B4FC", group:"C"},
+  D: {label:"Лампы накаливания 100 Вт", color:"#FCA5A5", group:"D"},
+  E: {label:"Лампы накаливания 60 Вт", color:"#F9A8D4", group:"E"},
+  F: {label:"Техпомещения, подвал", color:"#D8B4FE", group:"F"},
+  G: {label:"Светодиодные (LED)", color:"#6EE7B7", group:"G"}
+};
+
+function roomConsumption(type, n){
+  const grp = DATA.light.find(g => g.code === TYPE_INFO[type].group);
+  return n * grp.p * grp.t / 1000;
+}
+function roomSaving(type, n){
+  const grp = DATA.light.find(g => g.code === TYPE_INFO[type].group);
+  const target = {A:36, B:36, C:36, D:12, E:8, F:10, G:grp.p}[type];
+  return Math.max(0, n * (grp.p - target) * grp.t / 1000);
+}
+
+function drawPlan(){
+  const rooms = DATA.plan[state.floor];
+  const W = 880, H = 400;
+  const svg = svgEl("svg", {viewBox:`0 0 ${W} ${H}`, role:"group",
+    "aria-label":"Схема " + (state.floor + 1) + " этажа"});
+  rooms.forEach((r, idx) => {
+    const g = svgEl("g", {class:"room", tabindex:"0", role:"button",
+      "aria-label":`${r.name}, ${r.n} светильников`});
+    g.dataset.idx = idx;
+    g.appendChild(svgEl("rect", {x:r.x, y:r.y, width:r.w, height:r.h, rx:10,
+      fill:TYPE_INFO[r.type].color, stroke:"#FFFFFF", "stroke-width":3}));
+    const fs = r.w >= 170 ? 11.5 : 10.5;
+    const per = Math.max(8, Math.floor((r.w - 18) / (fs * 0.58)));
+    const lines = [];
+    let line = "";
+    r.name.split(" ").forEach(w => {
+      if ((line + " " + w).trim().length > per){ lines.push(line.trim()); line = w; }
+      else line = (line + " " + w).trim();
+    });
+    if (line) lines.push(line);
+    lines.slice(0, 3).forEach((ln, i) => {
+      const t = svgEl("text", {x:r.x + 9, y:r.y + 20 + i * (fs + 3.5), class:"room-label",
+        "font-size":fs});
+      t.textContent = ln;
+      g.appendChild(t);
+    });
+    const t2 = svgEl("text", {x:r.x + 9, y:r.y + r.h - 10, class:"room-sub", "font-size":fs - 1});
+    t2.textContent = r.w < 135 ? `${r.n} св.` : `${r.n} св. · ${nf(roomConsumption(r.type, r.n))} кВт·ч`;
+    g.appendChild(t2);
+    const pick = () => showRoom(r, g);
+    g.addEventListener("click", pick);
+    g.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
+    svg.appendChild(g);
+  });
+  const box = document.getElementById("plan");
+  box.innerHTML = "";
+  box.appendChild(svg);
+
+  const used = [...new Set(rooms.map(r => r.type))];
+  document.getElementById("plan-legend").innerHTML = used.map(t =>
+    `<span><i style="width:12px;height:12px;border-radius:4px;background:${TYPE_INFO[t].color};display:inline-block"></i>${TYPE_INFO[t].label}</span>`
+  ).join("");
+
+  const total = rooms.reduce((s, r) => s + r.n, 0);
+  const energy = rooms.reduce((s, r) => s + roomConsumption(r.type, r.n), 0);
+  const save = rooms.reduce((s, r) => s + roomSaving(r.type, r.n), 0);
+  const byType = used.map(t => {
+    const rows = rooms.filter(r => r.type === t);
+    return {t, n: rows.reduce((a, r) => a + r.n, 0)};
+  }).sort((a, b) => b.n - a.n);
+  const maxT = Math.max(...byType.map(x => x.n));
+  document.getElementById("room-card").innerHTML = `
+    <h3>${state.floor + 1} этаж — сводка</h3>
+    <p class="small muted">Всего ${nf0(total)} светильников, расход на освещение ${nf0(energy)} кВт·ч/год.</p>
+    <dl>
+      <dt>Потенциал экономии</dt><dd style="color:var(--color-success)">${nf0(save)} кВт·ч/год</dd>
+      <dt>Это в деньгах</dt><dd>${nf0(save * state.tariffE)} руб./год</dd>
+    </dl>
+    <p class="small muted" style="margin:var(--s4) 0 8px;font-weight:700">Светильники по типам</p>
+    ${byType.map(x => `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
+        <span style="width:10px;height:10px;border-radius:3px;background:${TYPE_INFO[x.t].color};flex:0 0 auto"></span>
+        <span class="small" style="flex:1 1 auto;color:var(--color-muted)">${TYPE_INFO[x.t].label}</span>
+        <b class="small" style="font-variant-numeric:tabular-nums">${x.n}</b>
+      </div>
+      <div class="bar-track" style="height:6px;margin:0 0 10px"><div class="bar-fill" style="width:${x.n / maxT * 100}%;background:${TYPE_INFO[x.t].color}"></div></div>`).join("")}
+    <p class="small muted" style="margin:var(--s3) 0 0">Нажмите на помещение, чтобы увидеть подробности.</p>`;
+}
+
+function showRoom(r, g){
+  document.querySelectorAll("#plan .room").forEach(el => el.classList.remove("is-active"));
+  g.classList.add("is-active");
+  const cons = roomConsumption(r.type, r.n);
+  const save = roomSaving(r.type, r.n);
+  document.getElementById("room-card").innerHTML = `
+    <h3>${r.name}</h3>
+    <p class="small muted" style="margin-bottom:var(--s3)">${TYPE_INFO[r.type].label}</p>
+    <dl>
+      <dt>Светильников</dt><dd>${r.n} шт.</dd>
+      <dt>Мощность одного</dt><dd>${DATA.light.find(x => x.code === TYPE_INFO[r.type].group).p} Вт</dd>
+      <dt>Расход в год</dt><dd>${nf0(cons)} кВт·ч</dd>
+      <dt>Стоимость</dt><dd>${nf0(cons * state.tariffE)} руб./год</dd>
+      <dt>Экономия после замены</dt><dd style="color:var(--color-success)">${nf0(save)} кВт·ч</dd>
+      <dt>Это в деньгах</dt><dd style="color:var(--color-success)">${nf0(save * state.tariffE)} руб./год</dd>
+    </dl>
+    ${save > 0
+      ? `<p class="small" style="margin:var(--s4) 0 0">Замена на светодиодные источники окупится
+         примерно за ${nf((r.n * 6.5) / (save * state.tariffE), 1)} года.</p>`
+      : `<p class="small" style="margin:var(--s4) 0 0">Здесь уже стоят светодиодные светильники —
+         экономить дальше можно только за счёт режима работы.</p>`}`;
+}
+
+function buildMapTabs(){
+  document.querySelectorAll('[data-floor]').forEach(btn => {
+    btn.addEventListener("click", () => {
+      state.floor = +btn.dataset.floor;
+      document.querySelectorAll('[data-floor]').forEach(b => {
+        const on = b === btn;
+        b.setAttribute("aria-selected", String(on));
+        b.classList.toggle("btn-primary", on);
+        b.classList.toggle("btn-ghost", !on);
+      });
+      drawPlan();
+    });
+  });
+}
+
+/* =====================================================================
+   ВИКТОРИНА
+   ===================================================================== */
+const QUESTIONS = [
+  {q:"Какая лампа даёт примерно такой же свет, как лампа накаливания на 60 Вт?",
+   a:["Светодиодная 8 Вт", "Светодиодная 30 Вт", "Галогенная 60 Вт"], c:0,
+   e:"Светодиодная лампа 8 Вт даёт около 700–800 лм — столько же, сколько лампа накаливания 60 Вт. Отсюда экономия в 7 раз."},
+  {q:"Сколько киловатт-часов примерно в одной гигакалории?",
+   a:["Около 100", "Около 1 163", "Около 10 000"], c:1,
+   e:"1 Гкал = 1 163 кВт·ч. Поэтому тепловая энергия в счёте школы — самая дорогая статья."},
+  {q:"Что показывает удельный расход энергии (кВт·ч/м² в год)?",
+   a:["Мощность всех ламп", "Расход энергии на единицу площади", "Стоимость одного киловатт-часа"], c:1,
+   e:"Удельный расход позволяет сравнивать разные школы между собой: у нас 30,13 кВт·ч/м² в год."},
+  {q:"Сколько электроэнергии школы расходуется на освещение?",
+   a:["Около 10 %", "Около 40 %", "Около 75 %"], c:1,
+   e:"По нашим расчётам — 40,6 %, это 79 222 кВт·ч в год. Освещение — самая крупная статья."},
+  {q:"Какой срок окупаемости у замены ламп накаливания на светодиодные (М1)?",
+   a:["Около 4 месяца", "Около 3 года", "Около 10 лет"], c:0,
+   e:"Затраты 2 904 руб., экономия 8 431 руб. в год — окупаемость 0,34 года, то есть около четырёх месяцев."},
+  {q:"Зачем нужен датчик движения в коридоре?",
+   a:["Чтобы свет был ярче", "Чтобы свет горел только когда есть люди", "Чтобы экономить тепло"], c:1,
+   e:"Датчик не меняет яркость, он сокращает время горения в зонах, где люди бывают периодически. Экономия — до 45 %."},
+  {q:"Что обязательно делать с отработавшими люминесцентными лампами?",
+   a:["Выбрасывать с обычным мусором", "Сдавать на специальную утилизацию", "Разбирать и выбрасывать"], c:1,
+   e:"Они содержат ртуть, поэтому их нельзя выбрасывать в обычный контейнер — нужна специальная утилизация."},
+  {q:"Когда в Гомеле солнечная станция вырабатывает больше всего энергии?",
+   a:["В декабре — январе", "В марте — апреле", "В мае — июле"], c:2,
+   e:"Максимум приходится на май — июль, а в декабре и январе выработка падает до 2–3 % годовой."}
+];
+
+const quiz = {i:0, score:0, answered:false};
+
+function renderQuiz(){
+  const box = document.getElementById("quiz-box");
+  if (quiz.i >= QUESTIONS.length){
+    const pct = Math.round(quiz.score / QUESTIONS.length * 100);
+    const msg = pct >= 87 ? "Отлично! Вы готовы проводить классный час сами."
+              : pct >= 62 ? "Хороший результат — основы энергосбережения усвоены."
+              : "Есть что повторить: пройдите викторину ещё раз, пояснения помогут.";
+    box.innerHTML = `
+      <div style="text-align:center;padding:var(--s5) 0">
+        <div class="q-num">Результат</div>
+        <div style="font-size:52px;font-weight:800;letter-spacing:-.03em;margin:6px 0">
+          ${quiz.score} <span style="font-size:24px;color:var(--color-muted)">/ ${QUESTIONS.length}</span>
+        </div>
+        <p class="muted" style="max-width:44ch;margin:0 auto var(--s5)">${msg}</p>
+        <button class="btn btn-primary" id="quiz-restart" type="button">Пройти заново</button>
+      </div>`;
+    document.getElementById("quiz-restart").addEventListener("click", () => {
+      quiz.i = 0; quiz.score = 0; quiz.answered = false; renderQuiz();
+    });
+    return;
+  }
+  const q = QUESTIONS[quiz.i];
+  quiz.answered = false;
+  box.innerHTML = `
+    <div class="progress"><i style="width:${quiz.i / QUESTIONS.length * 100}%"></i></div>
+    <div class="q-num">Вопрос ${quiz.i + 1} из ${QUESTIONS.length}</div>
+    <div class="q-text">${q.q}</div>
+    <div class="opts" id="opts"></div>
+    <div id="fb" aria-live="polite"></div>`;
+  const opts = document.getElementById("opts");
+  q.a.forEach((text, k) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "opt";
+    b.innerHTML = `<span class="k">${"АБВ"[k]}</span><span>${text}</span>`;
+    b.addEventListener("click", () => answer(k, q));
+    opts.appendChild(b);
+  });
+}
+
+function answer(k, q){
+  if (quiz.answered) return;
+  quiz.answered = true;
+  const opts = [...document.querySelectorAll("#opts .opt")];
+  opts.forEach((b, idx) => {
+    b.disabled = true;
+    if (idx === q.c) b.classList.add("correct");
+    if (idx === k && k !== q.c) b.classList.add("wrong");
+  });
+  if (k === q.c) quiz.score++;
+  document.getElementById("fb").innerHTML = `
+    <div class="feedback">
+      <b>${k === q.c ? "Верно." : "Не совсем."}</b> ${q.e}
+      <div style="margin-top:12px">
+        <button class="btn btn-primary btn-sm" id="next-q" type="button">
+          ${quiz.i === QUESTIONS.length - 1 ? "Показать результат" : "Следующий вопрос"}
+        </button>
+      </div>
+    </div>`;
+  document.getElementById("next-q").addEventListener("click", () => { quiz.i++; renderQuiz(); });
+}
+
+/* =====================================================================
+   ОТЧЁТ
+   ===================================================================== */
+function renderReport(t){
+  const body = document.getElementById("report-body");
+  if (!body) return;
+  const rows = [];
+  DATA.measures.forEach(m => {
+    if (!state.on[m.code]) return;
+    rows.push(`<tr><td><b>${m.code}</b></td><td>${m.name}</td>
+      <td class="n">${nf0(m.e)}</td><td class="n">${nf0(m.cost)}</td>
+      <td class="n">${nf0(m.e * state.tariffE)}</td>
+      <td class="n">${m.cost ? nf(m.cost / (m.e * state.tariffE), 2) + " года" : "—"}</td></tr>`);
+  });
+  if (state.onM6){
+    const money = DATA.M6.gcal * state.tariffH;
+    rows.push(`<tr><td><b>М6</b></td><td>${DATA.M6.name}</td>
+      <td class="n">${nf(DATA.M6.gcal, 1)} Гкал</td><td class="n">${nf0(DATA.M6.cost)}</td>
+      <td class="n">${nf0(money)}</td><td class="n">${nf(DATA.M6.cost / money, 2)} года</td></tr>`);
+  }
+  body.innerHTML = rows.length ? rows.join("")
+    : `<tr><td colspan="6" class="muted" style="text-align:center;padding:22px">Мероприятия не выбраны</td></tr>`;
+
+  document.getElementById("report-foot").innerHTML = `
+    <tr><td colspan="2">Итого</td>
+      <td class="n">${nf0(t.kwh)} кВт·ч</td>
+      <td class="n">${nf0(t.inv)}</td>
+      <td class="n">${nf0(t.money)}</td>
+      <td class="n">${t.money ? nf(t.payback, 2) + " года" : "—"}</td></tr>`;
+}
+
+function downloadCSV(){
+  const t = totals();
+  const lines = [["Код", "Мероприятие", "Экономия, кВт·ч/год", "Затраты, руб.", "Экономия, руб./год", "Окупаемость, лет"]];
+  DATA.measures.forEach(m => {
+    if (!state.on[m.code]) return;
+    lines.push([m.code, m.name, m.e, m.cost, Math.round(m.e * state.tariffE),
+      m.cost ? (m.cost / (m.e * state.tariffE)).toFixed(2) : "0"]);
+  });
+  if (state.onM6){
+    const money = DATA.M6.gcal * state.tariffH;
+    lines.push(["М6", DATA.M6.name, (DATA.M6.gcal * DATA.gcal_to_kwh).toFixed(0),
+      DATA.M6.cost, Math.round(money), (DATA.M6.cost / money).toFixed(2)]);
+  }
+  lines.push(["ИТОГО", "Выбранный сценарий", t.kwh, t.inv, Math.round(t.money), t.payback.toFixed(2)]);
+  lines.push([]);
+  lines.push(["Школа", DATA.school.name]);
+  lines.push(["Проект", "Энергопаспорт школы: от аудита к экономии"]);
+  lines.push(["Автор", "Железняков Дмитрий Михайлович, 9 «А» класс"]);
+  const csv = "\uFEFF" + lines.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(";")).join("\r\n");
+  try {
+    const blob = new Blob([csv], {type:"text/csv;charset=utf-8"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "energopasport-25-otchet.csv";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    document.getElementById("csv-hint").textContent = "Файл сохранён. Откройте его в Excel или LibreOffice.";
+  } catch (e){
+    document.getElementById("csv-hint").textContent = "Скачивание недоступно в этом окне — откройте файл в браузере напрямую.";
+  }
+}
+
+/* =====================================================================
+   НАВИГАЦИЯ И АНИМАЦИИ
+   ===================================================================== */
+function initNav(){
+  const links = [...document.querySelectorAll(".nav a")];
+  const secs = links.map(a => document.querySelector(a.getAttribute("href"))).filter(Boolean);
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      links.forEach(l => l.setAttribute("aria-current",
+        String(l.getAttribute("href") === "#" + e.target.id)));
+    });
+  }, {rootMargin:"-45% 0px -50% 0px"});
+  secs.forEach(s => io.observe(s));
+}
+
+function initReveal(){
+  const els = document.querySelectorAll(".reveal");
+  if (reduceMotion){ els.forEach(e => e.classList.add("in")); return; }
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); } });
+  }, {threshold:0.08});
+  els.forEach(e => io.observe(e));
+}
+
+/* =====================================================================
+   СТАРТ
+   ===================================================================== */
+function init(){
+  fillHero();
+  drawDonut();
+  drawLampBars();
+  buildMeasures();
+  buildSolarControls();
+  updateSolarMeta();
+  drawSolarChart();
+  buildMapTabs();
+  drawPlan();
+  renderQuiz();
+  initNav();
+  initReveal();
+  update();
+
+  document.getElementById("all-on").addEventListener("click", () => setAll(true));
+  document.getElementById("all-off").addEventListener("click", () => setAll(false));
+  document.getElementById("base-on").addEventListener("click", () => {
+    setAll(false);
+    ["М1", "М3", "М5"].forEach(c => { state.on[c] = true; });
+    state.onM6 = true;
+    document.querySelectorAll(".measure").forEach(card => {
+      const code = card.dataset.code;
+      const on = code === "M6" ? true : !!state.on[code];
+      card.classList.toggle("is-on", on);
+      card.querySelector(".switch").setAttribute("aria-checked", String(on));
+    });
+    update();
+  });
+
+  const bind = (id, key, isInt) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener("input", () => {
+      const v = parseFloat(el.value);
+      if (!isFinite(v) || v <= 0) return;
+      state[key] = isInt ? Math.round(v) : v;
+      update();
+      drawPlan();
+      if (document.querySelector("#room-card .is-active")) { /* сохраняем выбор */ }
+    });
+  };
+  bind("tariff-e", "tariffE");
+  bind("tariff-h", "tariffH");
+  bind("co2k", "co2k");
+  bind("area", "area", true);
+
+  document.getElementById("csv").addEventListener("click", downloadCSV);
+  document.getElementById("print").addEventListener("click", () => { try { window.print(); } catch (e) {} });
+}
+
+document.addEventListener("DOMContentLoaded", init);
+</script>
+</body>
+</html>
